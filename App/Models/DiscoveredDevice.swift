@@ -13,4 +13,8 @@ struct DiscoveredDevice: Identifiable, Equatable {
         self.name = name?.isEmpty == false ? name! : "N/A"
         self.rssi = rssi.intValue
     }
+
+    static func == (lhs: DiscoveredDevice, rhs: DiscoveredDevice) -> Bool {
+        lhs.id == rhs.id
+    }
 }

@@ -37,7 +37,7 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             build \
-            SYMROOT="$PWD/build"
+            SYMROOT="$PWD/build" | tee xcodebuild.log
 
       - name: Package IPA
         run: |
@@ -54,3 +54,10 @@ jobs:
         with:
           name: SurfieECU-unsigned-ipa
           path: SurfieECU-unsigned.ipa
+
+      - name: Upload xcodebuild log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log

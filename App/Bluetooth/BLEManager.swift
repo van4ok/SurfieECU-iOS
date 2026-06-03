@@ -136,90 +136,74 @@ final class BLEManager: NSObject, ObservableObject {
     }
 }
 
-extension BLEManager: CBCentralManagerDelegate {
-    nonisolated func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        Task { @MainActor in
-            self.state = BLEState(central.state)
-            if self.state != .poweredOn {
-                self.stopScanning()
-            }
+extension BLEManager: @preconcurrency CBCentralManagerDelegate {
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        state = BLEState(central.state)
+        if state != .poweredOn {
+            stopScanning()
         }
     }
 
-    nonisolated func centralManager(
+    func centralManager(
         _ central: CBCentralManager,
         didDiscover peripheral: CBPeripheral,
         advertisementData: [String: Any],
         rssi RSSI: NSNumber
     ) {
-        Task { @MainActor in
-            self.appendDevice(peripheral, advertisementData: advertisementData, rssi: RSSI)
-        }
+        appendDevice(peripheral, advertisementData: advertisementData, rssi: RSSI)
     }
 
-    nonisolated func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        Task { @MainActor in
-            self.connectionContinuation?.resume()
-            self.connectionContinuation = nil
-            peripheral.discoverServices(nil)
-        }
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        connectionContinuation?.resume()
+        connectionContinuation = nil
+        peripheral.discoverServices(nil)
     }
 
-    nonisolated func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        Task { @MainActor in
-            self.connectionContinuation?.resume(throwing: BLEError.connectionFailed(error))
-            self.connectionContinuation = nil
-        }
+    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        connectionContinuation?.resume(throwing: BLEError.connectionFailed(error))
+        connectionContinuation = nil
     }
 
-    nonisolated func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        Task { @MainActor in
-            self.activePeripheral = nil
-            self.connectedDevice = nil
-            self.activeServiceUUIDs = []
-            self.notifyCharacteristicUUIDs = []
-            self.writableCharacteristicUUIDs = []
-            self.writableCharacteristics = []
-        }
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        activePeripheral = nil
+        connectedDevice = nil
+        activeServiceUUIDs = []
+        notifyCharacteristicUUIDs = []
+        writableCharacteristicUUIDs = []
+        writableCharacteristics = []
     }
 }
 
-extension BLEManager: CBPeripheralDelegate {
-    nonisolated func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        Task { @MainActor in
-            guard error == nil else { return }
-            self.activeServiceUUIDs = peripheral.services?.map(\.uuid) ?? []
-            for service in peripheral.services ?? [] {
-                peripheral.discoverCharacteristics(nil, for: service)
-            }
+extension BLEManager: @preconcurrency CBPeripheralDelegate {
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        guard error == nil else { return }
+        activeServiceUUIDs = peripheral.services?.map(\.uuid) ?? []
+        for service in peripheral.services ?? [] {
+            peripheral.discoverCharacteristics(nil, for: service)
         }
     }
 
-    nonisolated func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        Task { @MainActor in
-            guard error == nil else { return }
-            for characteristic in service.characteristics ?? [] {
-                if characteristic.properties.contains(.notify) || characteristic.properties.contains(.indicate) {
-                    peripheral.setNotifyValue(true, for: characteristic)
-                    if !self.notifyCharacteristicUUIDs.contains(characteristic.uuid) {
-                        self.notifyCharacteristicUUIDs.append(characteristic.uuid)
-                    }
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        guard error == nil else { return }
+        for characteristic in service.characteristics ?? [] {
+            if characteristic.properties.contains(.notify) || characteristic.properties.contains(.indicate) {
+                peripheral.setNotifyValue(true, for: characteristic)
+                if !notifyCharacteristicUUIDs.contains(characteristic.uuid) {
+                    notifyCharacteristicUUIDs.append(characteristic.uuid)
                 }
+            }
 
-                if characteristic.properties.contains(.write) {
-                    self.writableCharacteristics.append((peripheral, service, characteristic))
-                    if !self.writableCharacteristicUUIDs.contains(characteristic.uuid) {
-                        self.writableCharacteristicUUIDs.append(characteristic.uuid)
-                    }
+            if characteristic.properties.contains(.write) {
+                writableCharacteristics.append((peripheral, service, characteristic))
+                if !writableCharacteristicUUIDs.contains(characteristic.uuid) {
+                    writableCharacteristicUUIDs.append(characteristic.uuid)
                 }
             }
         }
     }
 
-    nonisolated func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         guard error == nil, let value = characteristic.value else { return }
-        Task { @MainActor in
-            self.telemetryData.send(value)
-        }
+        telemetryData.send(value)
     }
 }

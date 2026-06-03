@@ -32,12 +32,12 @@ struct TelemetryView: View {
                     }
 
                     VStack(spacing: 3) {
-                        MetricRow(title: "oil consumption (100/KM):", value: "\(telemetry.oilConsumptionPer100KM, specifier: "%.1f") ml")
-                        MetricRow(title: "oil consumption (1/H):", value: "\(telemetry.oilConsumptionPerHour, specifier: "%.1f") ml")
-                        MetricRow(title: "Y:", value: "\(telemetry.y, specifier: "%.1f") Z")
-                        MetricRow(title: "throttle valve:", value: "\(telemetry.throttleValve, specifier: "%.1f") V")
-                        MetricRow(title: "inlet temperature:", value: "\(telemetry.inletTemperature, specifier: "%.1f") ℃")
-                        MetricRow(title: "engine temperature:", value: "\(telemetry.engineTemperature, specifier: "%.1f") ℃")
+                        MetricRow(title: "oil consumption (100/KM):", value: format(telemetry.oilConsumptionPer100KM, unit: "ml"))
+                        MetricRow(title: "oil consumption (1/H):", value: format(telemetry.oilConsumptionPerHour, unit: "ml"))
+                        MetricRow(title: "Y:", value: format(telemetry.y, unit: "Z"))
+                        MetricRow(title: "throttle valve:", value: format(telemetry.throttleValve, unit: "V"))
+                        MetricRow(title: "inlet temperature:", value: format(telemetry.inletTemperature, unit: "C"))
+                        MetricRow(title: "engine temperature:", value: format(telemetry.engineTemperature, unit: "C"))
                     }
                     .padding(.horizontal, 16)
 
@@ -113,5 +113,9 @@ struct TelemetryView: View {
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func format(_ value: Double, unit: String) -> String {
+        String(format: "%.1f %@", value, unit)
     }
 }
