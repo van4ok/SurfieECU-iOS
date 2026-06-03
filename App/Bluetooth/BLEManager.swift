@@ -28,6 +28,7 @@ enum BLEError: Error, LocalizedError {
     case missingPeripheral
     case missingWritableCharacteristic
     case connectionFailed(Error?)
+    case disconnectedBeforeServices
 
     var errorDescription: String? {
         switch self {
@@ -39,6 +40,8 @@ enum BLEError: Error, LocalizedError {
             return "No writable BLE characteristic was discovered."
         case .connectionFailed(let error):
             return error?.localizedDescription ?? "BLE connection failed."
+        case .disconnectedBeforeServices:
+            return "The BLE device disconnected before services were discovered."
         }
     }
 }
@@ -59,6 +62,8 @@ final class BLEManager: NSObject, ObservableObject {
     private var activePeripheral: CBPeripheral?
     private var writableCharacteristics: [(CBPeripheral, CBService, CBCharacteristic)] = []
     private var connectionContinuation: CheckedContinuation<Void, Error>?
+    private var scanRequested = false
+    private var scanTimeoutTask: Task<Void, Never>?
 
     override init() {
         super.init()
@@ -66,7 +71,11 @@ final class BLEManager: NSObject, ObservableObject {
     }
 
     func startScanning() throws {
+        scanRequested = true
         guard state == .poweredOn else {
+            if state == .unknown || state == .resetting {
+                return
+            }
             throw BLEError.bluetoothUnavailable(state)
         }
         discoveredDevices.removeAll()
@@ -74,9 +83,17 @@ final class BLEManager: NSObject, ObservableObject {
         central.scanForPeripherals(withServices: nil, options: [
             CBCentralManagerScanOptionAllowDuplicatesKey: false
         ])
+        scheduleScanTimeout()
     }
 
     func stopScanning() {
+        scanRequested = false
+        stopScanningHardware()
+    }
+
+    private func stopScanningHardware() {
+        scanTimeoutTask?.cancel()
+        scanTimeoutTask = nil
         central.stopScan()
         isScanning = false
     }
@@ -90,6 +107,10 @@ final class BLEManager: NSObject, ObservableObject {
         activePeripheral = device.peripheral
         device.peripheral.delegate = self
         connectedDevice = device
+        activeServiceUUIDs = []
+        notifyCharacteristicUUIDs = []
+        writableCharacteristicUUIDs = []
+        writableCharacteristics = []
 
         try await withCheckedThrowingContinuation { continuation in
             connectionContinuation = continuation
@@ -113,7 +134,8 @@ final class BLEManager: NSObject, ObservableObject {
             throw BLEError.missingWritableCharacteristic
         }
         for item in writableCharacteristics {
-            item.0.writeValue(data, for: item.2, type: .withResponse)
+            let type: CBCharacteristicWriteType = item.2.properties.contains(.write) ? .withResponse : .withoutResponse
+            item.0.writeValue(data, for: item.2, type: type)
         }
     }
 
@@ -131,8 +153,20 @@ final class BLEManager: NSObject, ObservableObject {
     private func appendDevice(_ peripheral: CBPeripheral, advertisementData: [String: Any], rssi: NSNumber) {
         let advertisedName = advertisementData[CBAdvertisementDataLocalNameKey] as? String
         let device = DiscoveredDevice(peripheral: peripheral, name: advertisedName ?? peripheral.name, rssi: rssi)
-        guard !discoveredDevices.contains(where: { $0.id == device.id }) else { return }
-        discoveredDevices.append(device)
+        if let index = discoveredDevices.firstIndex(where: { $0.id == device.id }) {
+            discoveredDevices[index] = device
+        } else {
+            discoveredDevices.append(device)
+        }
+    }
+
+    private func scheduleScanTimeout() {
+        scanTimeoutTask?.cancel()
+        scanTimeoutTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(10))
+            guard !Task.isCancelled else { return }
+            self?.stopScanning()
+        }
     }
 }
 
@@ -140,7 +174,12 @@ extension BLEManager: @preconcurrency CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         state = BLEState(central.state)
         if state != .poweredOn {
-            stopScanning()
+            stopScanningHardware()
+            if state == .poweredOff || state == .unauthorized || state == .unsupported {
+                scanRequested = false
+            }
+        } else if scanRequested && !isScanning {
+            try? startScanning()
         }
     }
 
@@ -165,6 +204,10 @@ extension BLEManager: @preconcurrency CBCentralManagerDelegate {
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        if let continuation = connectionContinuation {
+            continuation.resume(throwing: error.map { BLEError.connectionFailed($0) } ?? BLEError.disconnectedBeforeServices)
+            connectionContinuation = nil
+        }
         activePeripheral = nil
         connectedDevice = nil
         activeServiceUUIDs = []
@@ -193,7 +236,7 @@ extension BLEManager: @preconcurrency CBPeripheralDelegate {
                 }
             }
 
-            if characteristic.properties.contains(.write) {
+            if characteristic.properties.contains(.write) || characteristic.properties.contains(.writeWithoutResponse) {
                 writableCharacteristics.append((peripheral, service, characteristic))
                 if !writableCharacteristicUUIDs.contains(characteristic.uuid) {
                     writableCharacteristicUUIDs.append(characteristic.uuid)
