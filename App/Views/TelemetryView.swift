@@ -128,6 +128,15 @@ struct TelemetryView: View {
                 Text("Notifications: \(bluetoothManager.notificationCount)")
                     .font(.caption2)
                     .foregroundStyle(.white.opacity(0.55))
+                if let rpmDebugText {
+                    Text(rpmDebugText)
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.55))
+                }
+                Text("Last hex: \(shortHex(bluetoothManager.lastNotificationHex))")
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.45))
+                    .lineLimit(2)
             }
         }
         .padding(.horizontal, 16)
@@ -162,5 +171,35 @@ struct TelemetryView: View {
 
     private func format(_ value: Double, unit: String) -> String {
         String(format: "%.1f %@", value, unit)
+    }
+
+    private var rpmDebugText: String? {
+        let bytes = bytesFromHex(bluetoothManager.lastNotificationHex)
+        guard bytes.count > 7 else {
+            return nil
+        }
+        let rpm = Int(bytes[6]) * 256 + Int(bytes[7])
+        return String(format: "RPM bytes: %02X %02X -> %d rpm", bytes[6], bytes[7], rpm)
+    }
+
+    private func shortHex(_ hex: String) -> String {
+        guard hex.count > 64 else {
+            return hex
+        }
+        let prefix = hex.prefix(64)
+        return "\(prefix)..."
+    }
+
+    private func bytesFromHex(_ hex: String) -> [UInt8] {
+        var result: [UInt8] = []
+        var index = hex.startIndex
+        while index < hex.endIndex {
+            let next = hex.index(index, offsetBy: 2, limitedBy: hex.endIndex) ?? hex.endIndex
+            if let byte = UInt8(hex[index..<next], radix: 16) {
+                result.append(byte)
+            }
+            index = next
+        }
+        return result
     }
 }

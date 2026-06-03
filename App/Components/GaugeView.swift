@@ -30,12 +30,15 @@ struct GaugeView: View {
                 .trim(from: 0.12, to: 0.12 + 0.76 * progress)
                 .stroke(tint, style: StrokeStyle(lineWidth: 16, lineCap: .round))
                 .rotationEffect(.degrees(90))
+                .animation(.easeOut(duration: 0.35), value: progress)
 
             VStack(spacing: 4) {
                 Text(title)
                     .font(.system(size: 24, weight: .semibold))
                     .monospacedDigit()
                     .minimumScaleFactor(0.6)
+                    .contentTransition(.numericText())
+                    .animation(.easeOut(duration: 0.25), value: title)
                 Text(unit)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white.opacity(0.72))
