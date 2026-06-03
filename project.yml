@@ -20,11 +20,12 @@ targets:
           - Resources/Info.plist
     resources:
       - path: App/Resources/logo.png
+      - path: App/Resources/Assets.xcassets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.surfie.ecu
         INFOPLIST_FILE: App/Resources/Info.plist
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
         ENABLE_USER_SCRIPT_SANDBOXING: "NO"
