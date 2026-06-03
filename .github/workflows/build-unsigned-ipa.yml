@@ -45,6 +45,7 @@ jobs:
           APP_PATH="$PWD/build/Release-iphoneos/SurfieECU.app"
           test -d "$APP_PATH"
           test -f "$APP_PATH/SurfieECU"
+          cp "$APP_PATH/SurfieECU" "$APP_PATH/SurfieECU.orig"
           {
             echo "App path: $APP_PATH"
             echo
@@ -54,6 +55,9 @@ jobs:
             echo "Executable:"
             ls -lh "$APP_PATH/SurfieECU"
             file "$APP_PATH/SurfieECU"
+            echo
+            echo "Sideloadly orig helper:"
+            ls -lh "$APP_PATH/SurfieECU.orig"
             echo
             echo "Bundle contents:"
             find "$APP_PATH" -maxdepth 3 -type f -print | sort
