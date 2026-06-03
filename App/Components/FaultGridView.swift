@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FaultGridView: View {
     let faults: [Bool]
+    let hasTelemetry: Bool
 
     private let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -19,8 +20,8 @@ struct FaultGridView: View {
 
                     Spacer(minLength: 4)
 
-                    Image(systemName: faultState(at: index) ? "xmark.circle.fill" : "checkmark.circle.fill")
-                        .foregroundStyle(faultState(at: index) ? .red : .green)
+                    Image(systemName: iconName(at: index))
+                        .foregroundStyle(iconColor(at: index))
                 }
                 .frame(minHeight: 34)
             }
@@ -29,5 +30,19 @@ struct FaultGridView: View {
 
     private func faultState(at index: Int) -> Bool {
         faults.indices.contains(index) ? faults[index] : false
+    }
+
+    private func iconName(at index: Int) -> String {
+        guard hasTelemetry else {
+            return "circle.fill"
+        }
+        return faultState(at: index) ? "xmark.circle.fill" : "checkmark.circle.fill"
+    }
+
+    private func iconColor(at index: Int) -> Color {
+        guard hasTelemetry else {
+            return .gray
+        }
+        return faultState(at: index) ? .red : .green
     }
 }

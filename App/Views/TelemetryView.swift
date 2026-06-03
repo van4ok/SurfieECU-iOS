@@ -44,7 +44,10 @@ struct TelemetryView: View {
                     VStack(spacing: 14) {
                         Text("running state")
                             .font(.system(size: 22, weight: .bold))
-                        FaultGridView(faults: telemetry.faultBits)
+                        FaultGridView(
+                            faults: telemetry.faultBits,
+                            hasTelemetry: viewModel.hasReceivedECUTelemetry
+                        )
                     }
                     .padding(.horizontal, 16)
 
