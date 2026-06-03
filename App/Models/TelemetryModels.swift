@@ -16,22 +16,22 @@ struct ECUTelemetry: Equatable {
 
 enum TelemetryLabel {
     static let faults = [
-        "trigger signal",
-        "oxygen sensor",
-        "negative pressure signal",
-        "fuel injection output",
-        "oil pump output",
-        "ignition output",
-        "throttle valve",
-        "oil pump plug",
-        "production fault 1",
-        "production fault 2",
-        "production fault 3",
-        "production fault 4",
-        "production fault 5",
-        "production fault 6",
-        "production fault 7",
-        "production fault 8"
+        "Сигнал запуска",
+        "Кислородный датчик",
+        "Сигнал разрежения",
+        "Выход форсунки",
+        "Выход бензонасоса",
+        "Выход зажигания",
+        "Дроссельная заслонка",
+        "Разъем бензонасоса",
+        "Производственная ошибка 1",
+        "Производственная ошибка 2",
+        "Производственная ошибка 3",
+        "Производственная ошибка 4",
+        "Производственная ошибка 5",
+        "Производственная ошибка 6",
+        "Производственная ошибка 7",
+        "Производственная ошибка 8"
     ]
 }
 

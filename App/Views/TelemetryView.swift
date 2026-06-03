@@ -32,17 +32,17 @@ struct TelemetryView: View {
                     }
 
                     VStack(spacing: 3) {
-                        MetricRow(title: "oil consumption (100/KM):", value: format(telemetry.oilConsumptionPer100KM, unit: "ml"))
-                        MetricRow(title: "oil consumption (1/H):", value: format(telemetry.oilConsumptionPerHour, unit: "ml"))
+                        MetricRow(title: "Расход топлива (100 км):", value: format(telemetry.oilConsumptionPer100KM, unit: "мл"))
+                        MetricRow(title: "Расход топлива (1 час):", value: format(telemetry.oilConsumptionPerHour, unit: "мл"))
                         MetricRow(title: "Y:", value: format(telemetry.y, unit: "Z"))
-                        MetricRow(title: "throttle valve:", value: format(telemetry.throttleValve, unit: "V"))
-                        MetricRow(title: "inlet temperature:", value: format(telemetry.inletTemperature, unit: "C"))
-                        MetricRow(title: "engine temperature:", value: format(telemetry.engineTemperature, unit: "C"))
+                        MetricRow(title: "Дроссель:", value: format(telemetry.throttleValve, unit: "В"))
+                        MetricRow(title: "Температура впуска:", value: format(telemetry.inletTemperature, unit: "C"))
+                        MetricRow(title: "Температура двигателя:", value: format(telemetry.engineTemperature, unit: "C"))
                     }
                     .padding(.horizontal, 16)
 
                     VStack(spacing: 14) {
-                        Text("running state")
+                        Text("Состояние системы")
                             .font(.system(size: 22, weight: .bold))
                         FaultGridView(
                             faults: telemetry.faultBits,
@@ -136,18 +136,18 @@ struct TelemetryView: View {
 
     private var connectionStatus: String {
         guard bluetoothManager.connectedDevice != nil else {
-            return "Not connected"
+            return "Не подключено"
         }
         if viewModel.hasReceivedECUTelemetry {
-            return "Receiving Surfie ECU telemetry"
+            return "Получены данные Surfie ECU"
         }
         if bluetoothManager.notificationCount > 0 {
-            return "Connected, but notifications are not Surfie ECU packets"
+            return "Подключено, но пакеты не похожи на Surfie ECU"
         }
         if !bluetoothManager.notifyCharacteristicUUIDs.isEmpty {
-            return "Connected. Waiting for ECU notifications"
+            return "Подключено. Ожидание данных ECU"
         }
-        return "Connected. No notify characteristic discovered yet"
+        return "Подключено. Notify-характеристика пока не найдена"
     }
 
     private var statusColor: Color {

@@ -39,7 +39,7 @@ struct DeviceListPanel: View {
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                                 if !isLikelySurfieDevice(device) {
-                                    Text("May connect, but Surfie ECU data is not guaranteed")
+                                    Text("Не похоже на Surfie ECU")
                                         .font(.caption2)
                                         .foregroundStyle(.orange)
                                 }
