@@ -44,10 +44,25 @@ jobs:
           set -euo pipefail
           APP_PATH="$PWD/build/Release-iphoneos/SurfieECU.app"
           test -d "$APP_PATH"
+          test -f "$APP_PATH/SurfieECU"
+          {
+            echo "App path: $APP_PATH"
+            echo
+            echo "App bundle size:"
+            du -sh "$APP_PATH"
+            echo
+            echo "Executable:"
+            ls -lh "$APP_PATH/SurfieECU"
+            file "$APP_PATH/SurfieECU"
+            echo
+            echo "Bundle contents:"
+            find "$APP_PATH" -maxdepth 3 -type f -print | sort
+          } | tee app-bundle-manifest.txt
           rm -rf Payload SurfieECU-unsigned.ipa
           mkdir Payload
           cp -R "$APP_PATH" Payload/
           /usr/bin/zip -qry SurfieECU-unsigned.ipa Payload
+          ls -lh SurfieECU-unsigned.ipa
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
@@ -61,3 +76,10 @@ jobs:
         with:
           name: xcodebuild-log
           path: xcodebuild.log
+
+      - name: Upload app bundle manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-bundle-manifest
+          path: app-bundle-manifest.txt
