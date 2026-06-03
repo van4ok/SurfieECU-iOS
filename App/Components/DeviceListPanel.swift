@@ -39,7 +39,7 @@ struct DeviceListPanel: View {
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                                 if !isLikelySurfieDevice(device) {
-                                    Text("Не похоже на Surfie ECU")
+                                    Text("\u{041D}\u{0435} \u{043F}\u{043E}\u{0445}\u{043E}\u{0436}\u{0435} \u{043D}\u{0430} Surfie ECU")
                                         .font(.caption2)
                                         .foregroundStyle(.orange)
                                 }

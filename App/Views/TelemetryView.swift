@@ -32,17 +32,17 @@ struct TelemetryView: View {
                     }
 
                     VStack(spacing: 3) {
-                        MetricRow(title: "Расход топлива (100 км):", value: format(telemetry.oilConsumptionPer100KM, unit: "мл"))
-                        MetricRow(title: "Расход топлива (1 час):", value: format(telemetry.oilConsumptionPerHour, unit: "мл"))
+                        MetricRow(title: "\u{0420}\u{0430}\u{0441}\u{0445}\u{043E}\u{0434} \u{0442}\u{043E}\u{043F}\u{043B}\u{0438}\u{0432}\u{0430} (100 \u{043A}\u{043C}):", value: format(telemetry.oilConsumptionPer100KM, unit: "\u{043C}\u{043B}"))
+                        MetricRow(title: "\u{0420}\u{0430}\u{0441}\u{0445}\u{043E}\u{0434} \u{0442}\u{043E}\u{043F}\u{043B}\u{0438}\u{0432}\u{0430} (1 \u{0447}\u{0430}\u{0441}):", value: format(telemetry.oilConsumptionPerHour, unit: "\u{043C}\u{043B}"))
                         MetricRow(title: "Y:", value: format(telemetry.y, unit: "Z"))
-                        MetricRow(title: "Дроссель:", value: format(telemetry.throttleValve, unit: "В"))
-                        MetricRow(title: "Температура впуска:", value: format(telemetry.inletTemperature, unit: "C"))
-                        MetricRow(title: "Температура двигателя:", value: format(telemetry.engineTemperature, unit: "C"))
+                        MetricRow(title: "\u{0414}\u{0440}\u{043E}\u{0441}\u{0441}\u{0435}\u{043B}\u{044C}:", value: format(telemetry.throttleValve, unit: "\u{0412}"))
+                        MetricRow(title: "\u{0422}\u{0435}\u{043C}\u{043F}\u{0435}\u{0440}\u{0430}\u{0442}\u{0443}\u{0440}\u{0430} \u{0432}\u{043F}\u{0443}\u{0441}\u{043A}\u{0430}:", value: format(telemetry.inletTemperature, unit: "C"))
+                        MetricRow(title: "\u{0422}\u{0435}\u{043C}\u{043F}\u{0435}\u{0440}\u{0430}\u{0442}\u{0443}\u{0440}\u{0430} \u{0434}\u{0432}\u{0438}\u{0433}\u{0430}\u{0442}\u{0435}\u{043B}\u{044F}:", value: format(telemetry.engineTemperature, unit: "C"))
                     }
                     .padding(.horizontal, 16)
 
                     VStack(spacing: 14) {
-                        Text("Состояние системы")
+                        Text("\u{0421}\u{043E}\u{0441}\u{0442}\u{043E}\u{044F}\u{043D}\u{0438}\u{0435} \u{0441}\u{0438}\u{0441}\u{0442}\u{0435}\u{043C}\u{044B}")
                             .font(.system(size: 22, weight: .bold))
                         FaultGridView(
                             faults: telemetry.faultBits,
@@ -102,12 +102,23 @@ struct TelemetryView: View {
     private var connectionDetails: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let device = bluetoothManager.connectedDevice {
-                Text("Connected: \(device.name)")
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Connected: \(device.name)")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.7))
+                        Text(connectionStatus)
+                            .font(.caption)
+                            .foregroundStyle(statusColor)
+                    }
+                    Spacer()
+                    Button("\u{041E}\u{0442}\u{043A}\u{043B}.") {
+                        viewModel.disconnect()
+                    }
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
-                Text(connectionStatus)
-                    .font(.caption)
-                    .foregroundStyle(statusColor)
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                }
             }
 
             if !bluetoothManager.activeServiceUUIDs.isEmpty {
@@ -145,18 +156,18 @@ struct TelemetryView: View {
 
     private var connectionStatus: String {
         guard bluetoothManager.connectedDevice != nil else {
-            return "Не подключено"
+            return "\u{041D}\u{0435} \u{043F}\u{043E}\u{0434}\u{043A}\u{043B}\u{044E}\u{0447}\u{0435}\u{043D}\u{043E}"
         }
         if viewModel.hasReceivedECUTelemetry {
-            return "Получены данные Surfie ECU"
+            return "\u{041F}\u{043E}\u{043B}\u{0443}\u{0447}\u{0435}\u{043D}\u{044B} \u{0434}\u{0430}\u{043D}\u{043D}\u{044B}\u{0435} Surfie ECU"
         }
         if bluetoothManager.notificationCount > 0 {
-            return "Подключено, но пакеты не похожи на Surfie ECU"
+            return "\u{041F}\u{043E}\u{0434}\u{043A}\u{043B}\u{044E}\u{0447}\u{0435}\u{043D}\u{043E}, \u{043D}\u{043E} \u{043F}\u{0430}\u{043A}\u{0435}\u{0442}\u{044B} \u{043D}\u{0435} \u{043F}\u{043E}\u{0445}\u{043E}\u{0436}\u{0438} \u{043D}\u{0430} Surfie ECU"
         }
         if !bluetoothManager.notifyCharacteristicUUIDs.isEmpty {
-            return "Подключено. Ожидание данных ECU"
+            return "\u{041F}\u{043E}\u{0434}\u{043A}\u{043B}\u{044E}\u{0447}\u{0435}\u{043D}\u{043E}. \u{041E}\u{0436}\u{0438}\u{0434}\u{0430}\u{043D}\u{0438}\u{0435} \u{0434}\u{0430}\u{043D}\u{043D}\u{044B}\u{0445} ECU"
         }
-        return "Подключено. Notify-характеристика пока не найдена"
+        return "\u{041F}\u{043E}\u{0434}\u{043A}\u{043B}\u{044E}\u{0447}\u{0435}\u{043D}\u{043E}. Notify-\u{0445}\u{0430}\u{0440}\u{0430}\u{043A}\u{0442}\u{0435}\u{0440}\u{0438}\u{0441}\u{0442}\u{0438}\u{043A}\u{0430} \u{043F}\u{043E}\u{043A}\u{0430} \u{043D}\u{0435} \u{043D}\u{0430}\u{0439}\u{0434}\u{0435}\u{043D}\u{0430}"
     }
 
     private var statusColor: Color {

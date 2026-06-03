@@ -11,6 +11,7 @@ final class TelemetryViewModel: ObservableObject {
     private let connector: DeviceConnector
     private let telemetryService: TelemetryService
     private var cancellables: Set<AnyCancellable> = []
+    private var isFirstTelemetryPacket = true
 
     init(scanner: DeviceScanner, connector: DeviceConnector, telemetryService: TelemetryService) {
         self.scanner = scanner
@@ -19,9 +20,15 @@ final class TelemetryViewModel: ObservableObject {
 
         telemetryService.telemetryPublisher()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] telemetry in
-                self?.telemetry = telemetry
-                self?.hasReceivedECUTelemetry = true
+            .sink { [weak self] nextTelemetry in
+                guard let self else { return }
+                if isFirstTelemetryPacket {
+                    telemetry = nextTelemetry
+                    isFirstTelemetryPacket = false
+                } else {
+                    telemetry = telemetry.smoothed(toward: nextTelemetry, alpha: 0.35)
+                }
+                hasReceivedECUTelemetry = true
             }
             .store(in: &cancellables)
     }
@@ -41,7 +48,7 @@ final class TelemetryViewModel: ObservableObject {
     func connect(to device: DiscoveredDevice) {
         Task {
             do {
-                hasReceivedECUTelemetry = false
+                resetTelemetryState()
                 try await connector.connect(to: device)
             } catch {
                 errorMessage = error.localizedDescription
@@ -51,6 +58,7 @@ final class TelemetryViewModel: ObservableObject {
 
     func disconnect() {
         connector.disconnect()
+        resetTelemetryState()
     }
 
     func readOnce() {
@@ -59,5 +67,11 @@ final class TelemetryViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func resetTelemetryState() {
+        telemetry = ECUTelemetry()
+        hasReceivedECUTelemetry = false
+        isFirstTelemetryPacket = true
     }
 }
