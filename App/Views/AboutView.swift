@@ -22,6 +22,13 @@ struct AboutView: View {
                 Link("TEL:(+86)13861187887", destination: URL(string: "tel://\(AppConstants.phoneNumber)")!)
                 Link(AppConstants.website, destination: AppConstants.websiteURL)
 
+                NavigationLink {
+                    ECUDiagnosticsView()
+                } label: {
+                    Label("ECU Diagnostics", systemImage: "waveform.path.ecg")
+                }
+                .padding(.top, 8)
+
                 Spacer()
 
                 Text(AppConstants.copyright)

@@ -57,6 +57,7 @@ final class BLEManager: NSObject, ObservableObject {
     @Published private(set) var writableCharacteristicUUIDs: [CBUUID] = []
     @Published private(set) var notificationCount = 0
     @Published private(set) var lastNotificationHex = ""
+    @Published private(set) var diagnosticRecords: [BLEDiagnosticRecord] = []
 
     let telemetryData = PassthroughSubject<Data, Never>()
 
@@ -115,6 +116,7 @@ final class BLEManager: NSObject, ObservableObject {
         writableCharacteristics = []
         notificationCount = 0
         lastNotificationHex = ""
+        diagnosticRecords = []
 
         try await withCheckedThrowingContinuation { continuation in
             connectionContinuation = continuation
@@ -133,6 +135,10 @@ final class BLEManager: NSObject, ObservableObject {
         writableCharacteristics = []
         notificationCount = 0
         lastNotificationHex = ""
+    }
+
+    func clearDiagnosticRecords() {
+        diagnosticRecords = []
     }
 
     func write(_ data: Data) throws {
@@ -255,8 +261,42 @@ extension BLEManager: @preconcurrency CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         guard error == nil, let value = characteristic.value else { return }
-        notificationCount += 1
-        lastNotificationHex = value.map { String(format: "%02x", $0) }.joined()
+        let source: BLEDiagnosticRecord.Source = characteristic.isNotifying ? .notify : .read
+        let hex = value.map { String(format: "%02x", $0) }.joined()
+        appendDiagnosticRecord(
+            source: source,
+            serviceUUID: characteristic.service?.uuid.uuidString ?? "unknown",
+            characteristicUUID: characteristic.uuid.uuidString,
+            value: value,
+            hex: hex
+        )
+        if source == .notify {
+            notificationCount += 1
+            lastNotificationHex = hex
+        }
         telemetryData.send(value)
+    }
+
+    private func appendDiagnosticRecord(
+        source: BLEDiagnosticRecord.Source,
+        serviceUUID: String,
+        characteristicUUID: String,
+        value: Data,
+        hex: String
+    ) {
+        let normalizedHex = hex.hasSuffix("0a") ? String(hex.dropLast(2)) : hex
+        let record = BLEDiagnosticRecord(
+            date: Date(),
+            source: source,
+            serviceUUID: serviceUUID,
+            characteristicUUID: characteristicUUID,
+            length: value.count,
+            hex: hex,
+            looksLikeECUPacket: normalizedHex.hasPrefix("aa") && [40, 42, 62, 64].contains(normalizedHex.count)
+        )
+        diagnosticRecords.append(record)
+        if diagnosticRecords.count > 500 {
+            diagnosticRecords.removeFirst(diagnosticRecords.count - 500)
+        }
     }
 }
