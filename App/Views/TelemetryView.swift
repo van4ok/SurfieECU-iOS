@@ -102,6 +102,9 @@ struct TelemetryView: View {
                 Text("Connected: \(device.name)")
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.7))
+                Text(connectionStatus)
+                    .font(.caption)
+                    .foregroundStyle(statusColor)
             }
 
             if !bluetoothManager.activeServiceUUIDs.isEmpty {
@@ -110,9 +113,48 @@ struct TelemetryView: View {
                     .foregroundStyle(.white.opacity(0.55))
                     .lineLimit(3)
             }
+
+            if !bluetoothManager.notifyCharacteristicUUIDs.isEmpty {
+                Text("Notify: \(bluetoothManager.notifyCharacteristicUUIDs.map(\.uuidString).joined(separator: ", "))")
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.55))
+                    .lineLimit(3)
+            }
+
+            if bluetoothManager.notificationCount > 0 {
+                Text("Notifications: \(bluetoothManager.notificationCount)")
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.55))
+            }
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var connectionStatus: String {
+        guard bluetoothManager.connectedDevice != nil else {
+            return "Not connected"
+        }
+        if viewModel.hasReceivedECUTelemetry {
+            return "Receiving Surfie ECU telemetry"
+        }
+        if bluetoothManager.notificationCount > 0 {
+            return "Connected, but notifications are not Surfie ECU packets"
+        }
+        if !bluetoothManager.notifyCharacteristicUUIDs.isEmpty {
+            return "Connected. Waiting for ECU notifications"
+        }
+        return "Connected. No notify characteristic discovered yet"
+    }
+
+    private var statusColor: Color {
+        if viewModel.hasReceivedECUTelemetry {
+            return .green
+        }
+        if bluetoothManager.notificationCount > 0 {
+            return .orange
+        }
+        return .yellow
     }
 
     private func format(_ value: Double, unit: String) -> String {

@@ -38,6 +38,11 @@ struct DeviceListPanel: View {
                                 Text("RSSI \(device.rssi)")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
+                                if !isLikelySurfieDevice(device) {
+                                    Text("May connect, but Surfie ECU data is not guaranteed")
+                                        .font(.caption2)
+                                        .foregroundStyle(.orange)
+                                }
                             }
                         }
                     }
@@ -58,5 +63,10 @@ struct DeviceListPanel: View {
                 viewModel.startDiscovery()
             }
         }
+    }
+
+    private func isLikelySurfieDevice(_ device: DiscoveredDevice) -> Bool {
+        let name = device.name.uppercased()
+        return name.contains("SURFIE") || name.contains("ECU") || name.contains("MOTOR")
     }
 }

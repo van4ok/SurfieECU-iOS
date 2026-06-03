@@ -55,6 +55,8 @@ final class BLEManager: NSObject, ObservableObject {
     @Published private(set) var activeServiceUUIDs: [CBUUID] = []
     @Published private(set) var notifyCharacteristicUUIDs: [CBUUID] = []
     @Published private(set) var writableCharacteristicUUIDs: [CBUUID] = []
+    @Published private(set) var notificationCount = 0
+    @Published private(set) var lastNotificationHex = ""
 
     let telemetryData = PassthroughSubject<Data, Never>()
 
@@ -111,6 +113,8 @@ final class BLEManager: NSObject, ObservableObject {
         notifyCharacteristicUUIDs = []
         writableCharacteristicUUIDs = []
         writableCharacteristics = []
+        notificationCount = 0
+        lastNotificationHex = ""
 
         try await withCheckedThrowingContinuation { continuation in
             connectionContinuation = continuation
@@ -127,6 +131,8 @@ final class BLEManager: NSObject, ObservableObject {
         notifyCharacteristicUUIDs = []
         writableCharacteristicUUIDs = []
         writableCharacteristics = []
+        notificationCount = 0
+        lastNotificationHex = ""
     }
 
     func write(_ data: Data) throws {
@@ -214,6 +220,8 @@ extension BLEManager: @preconcurrency CBCentralManagerDelegate {
         notifyCharacteristicUUIDs = []
         writableCharacteristicUUIDs = []
         writableCharacteristics = []
+        notificationCount = 0
+        lastNotificationHex = ""
     }
 }
 
@@ -247,6 +255,8 @@ extension BLEManager: @preconcurrency CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         guard error == nil, let value = characteristic.value else { return }
+        notificationCount += 1
+        lastNotificationHex = value.map { String(format: "%02x", $0) }.joined()
         telemetryData.send(value)
     }
 }
