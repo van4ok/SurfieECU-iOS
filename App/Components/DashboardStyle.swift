@@ -1,13 +1,15 @@
 import SwiftUI
 
 struct DashboardPanelModifier: ViewModifier {
+    let cornerRadius: CGFloat
+
     func body(content: Content) -> some View {
         content
             .background {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(Color(red: 0.035, green: 0.075, blue: 0.115).opacity(0.82))
                     .overlay {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .stroke(
                                 LinearGradient(
                                     colors: [
@@ -27,8 +29,8 @@ struct DashboardPanelModifier: ViewModifier {
 }
 
 extension View {
-    func dashboardPanel() -> some View {
-        modifier(DashboardPanelModifier())
+    func dashboardPanel(cornerRadius: CGFloat = 14) -> some View {
+        modifier(DashboardPanelModifier(cornerRadius: cornerRadius))
     }
 }
 
