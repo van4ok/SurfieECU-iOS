@@ -39,6 +39,15 @@ jobs:
             build \
             SYMROOT="$PWD/build" | tee xcodebuild.log
 
+      - name: Annotate build errors
+        if: failure()
+        run: |
+          if [ -f xcodebuild.log ]; then
+            grep -E "error:|BUILD FAILED" xcodebuild.log | tail -80 | while IFS= read -r line; do
+              echo "::error::$line"
+            done
+          fi
+
       - name: Package IPA
         run: |
           set -euo pipefail
