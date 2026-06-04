@@ -4,15 +4,18 @@ struct DeviceListPanel: View {
     @EnvironmentObject private var bluetoothManager: BLEManager
     @EnvironmentObject private var viewModel: TelemetryViewModel
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("appLanguage") private var appLanguageRaw = AppLanguage.russian.rawValue
+
+    private var language: AppLanguage { AppLanguage.from(appLanguageRaw) }
 
     var body: some View {
         NavigationStack {
             List {
-                Section("Status") {
+                Section(sectionStatus) {
                     HStack {
-                        Text("scan status")
+                        Text(scanStatusTitle)
                         Spacer()
-                        Text(bluetoothManager.isScanning ? "discovering" : "stop")
+                        Text(bluetoothManager.isScanning ? discoveringTitle : stopTitle)
                             .foregroundStyle(.secondary)
                     }
                     HStack {
@@ -23,7 +26,7 @@ struct DeviceListPanel: View {
                     }
                 }
 
-                Section("Devices") {
+                Section(devicesTitle) {
                     ForEach(bluetoothManager.discoveredDevices) { device in
                         Button {
                             viewModel.connect(to: device)
@@ -39,7 +42,7 @@ struct DeviceListPanel: View {
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                                 if !isLikelySurfieDevice(device) {
-                                    Text("\u{041D}\u{0435} \u{043F}\u{043E}\u{0445}\u{043E}\u{0436}\u{0435} \u{043D}\u{0430} Surfie ECU")
+                                    Text(L10n.notSurfieDevice(language))
                                         .font(.caption2)
                                         .foregroundStyle(.orange)
                                 }
@@ -48,13 +51,13 @@ struct DeviceListPanel: View {
                     }
                 }
             }
-            .navigationTitle("Devices")
+            .navigationTitle(devicesTitle)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Close") { dismiss() }
+                    Button(closeTitle) { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(bluetoothManager.isScanning ? "Stop" : "Scan") {
+                    Button(bluetoothManager.isScanning ? stopTitle : scanTitle) {
                         bluetoothManager.isScanning ? viewModel.stopDiscovery() : viewModel.startDiscovery()
                     }
                 }
@@ -68,5 +71,54 @@ struct DeviceListPanel: View {
     private func isLikelySurfieDevice(_ device: DiscoveredDevice) -> Bool {
         let name = device.name.uppercased()
         return name.contains("SURFIE") || name.contains("ECU") || name.contains("MOTOR")
+    }
+
+    private var sectionStatus: String {
+        switch language {
+        case .english: "Status"
+        case .russian: "\u{0421}\u{0442}\u{0430}\u{0442}\u{0443}\u{0441}"
+        }
+    }
+
+    private var scanStatusTitle: String {
+        switch language {
+        case .english: "scan status"
+        case .russian: "\u{0441}\u{0442}\u{0430}\u{0442}\u{0443}\u{0441} \u{043F}\u{043E}\u{0438}\u{0441}\u{043A}\u{0430}"
+        }
+    }
+
+    private var discoveringTitle: String {
+        switch language {
+        case .english: "discovering"
+        case .russian: "\u{043F}\u{043E}\u{0438}\u{0441}\u{043A}"
+        }
+    }
+
+    private var stopTitle: String {
+        switch language {
+        case .english: "Stop"
+        case .russian: "\u{0421}\u{0442}\u{043E}\u{043F}"
+        }
+    }
+
+    private var scanTitle: String {
+        switch language {
+        case .english: "Scan"
+        case .russian: "\u{041F}\u{043E}\u{0438}\u{0441}\u{043A}"
+        }
+    }
+
+    private var devicesTitle: String {
+        switch language {
+        case .english: "Devices"
+        case .russian: "\u{0423}\u{0441}\u{0442}\u{0440}\u{043E}\u{0439}\u{0441}\u{0442}\u{0432}\u{0430}"
+        }
+    }
+
+    private var closeTitle: String {
+        switch language {
+        case .english: "Close"
+        case .russian: "\u{0417}\u{0430}\u{043A}\u{0440}\u{044B}\u{0442}\u{044C}"
+        }
     }
 }

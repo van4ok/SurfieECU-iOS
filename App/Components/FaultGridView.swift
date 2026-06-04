@@ -3,6 +3,7 @@ import SwiftUI
 struct FaultGridView: View {
     let faults: [Bool]
     let hasTelemetry: Bool
+    let language: AppLanguage
 
     private let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -11,7 +12,7 @@ struct FaultGridView: View {
 
     var body: some View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
-            ForEach(Array(TelemetryLabel.faults.enumerated()), id: \.offset) { index, label in
+            ForEach(Array(L10n.faults(language).enumerated()), id: \.offset) { index, label in
                 HStack(spacing: 8) {
                     Text(label)
                         .font(.system(size: 13))

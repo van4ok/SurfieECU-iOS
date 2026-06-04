@@ -2,6 +2,9 @@ import SwiftUI
 
 struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("appLanguage") private var appLanguageRaw = AppLanguage.russian.rawValue
+
+    private var language: AppLanguage { AppLanguage.from(appLanguageRaw) }
 
     var body: some View {
         NavigationStack {
@@ -22,6 +25,14 @@ struct AboutView: View {
                 Link("TEL:(+86)13861187887", destination: URL(string: "tel://\(AppConstants.phoneNumber)")!)
                 Link(AppConstants.website, destination: AppConstants.websiteURL)
 
+                Picker(languageTitle, selection: $appLanguageRaw) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(language.title).tag(language.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.top, 8)
+
                 NavigationLink {
                     ECUDiagnosticsView()
                 } label: {
@@ -37,12 +48,33 @@ struct AboutView: View {
                     .multilineTextAlignment(.center)
             }
             .padding(24)
-            .navigationTitle("About")
+            .navigationTitle(aboutTitle)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
+                    Button(doneTitle) { dismiss() }
                 }
             }
+        }
+    }
+
+    private var aboutTitle: String {
+        switch language {
+        case .english: "About"
+        case .russian: "\u{041E} \u{043F}\u{0440}\u{0438}\u{043B}\u{043E}\u{0436}\u{0435}\u{043D}\u{0438}\u{0438}"
+        }
+    }
+
+    private var doneTitle: String {
+        switch language {
+        case .english: "Done"
+        case .russian: "\u{0413}\u{043E}\u{0442}\u{043E}\u{0432}\u{043E}"
+        }
+    }
+
+    private var languageTitle: String {
+        switch language {
+        case .english: "Language"
+        case .russian: "\u{042F}\u{0437}\u{044B}\u{043A}"
         }
     }
 }

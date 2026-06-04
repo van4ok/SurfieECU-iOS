@@ -3,10 +3,12 @@ import SwiftUI
 struct TelemetryView: View {
     @EnvironmentObject private var bluetoothManager: BLEManager
     @EnvironmentObject private var viewModel: TelemetryViewModel
+    @AppStorage("appLanguage") private var appLanguageRaw = AppLanguage.russian.rawValue
     @State private var showingDevices = false
     @State private var showingAbout = false
 
     private var telemetry: ECUTelemetry { viewModel.telemetry }
+    private var language: AppLanguage { AppLanguage.from(appLanguageRaw) }
 
     var body: some View {
         NavigationStack {
@@ -32,21 +34,22 @@ struct TelemetryView: View {
                     }
 
                     VStack(spacing: 3) {
-                        MetricRow(title: "\u{0420}\u{0430}\u{0441}\u{0445}\u{043E}\u{0434} \u{0442}\u{043E}\u{043F}\u{043B}\u{0438}\u{0432}\u{0430} (100 \u{043A}\u{043C}):", value: format(telemetry.oilConsumptionPer100KM, unit: "\u{043C}\u{043B}"))
-                        MetricRow(title: "\u{0420}\u{0430}\u{0441}\u{0445}\u{043E}\u{0434} \u{0442}\u{043E}\u{043F}\u{043B}\u{0438}\u{0432}\u{0430} (1 \u{0447}\u{0430}\u{0441}):", value: format(telemetry.oilConsumptionPerHour, unit: "\u{043C}\u{043B}"))
+                        MetricRow(title: L10n.oilPer100KM(language), value: format(telemetry.oilConsumptionPer100KM, unit: fuelVolumeUnit))
+                        MetricRow(title: L10n.oilPerHour(language), value: format(telemetry.oilConsumptionPerHour, unit: fuelVolumeUnit))
                         MetricRow(title: "Y:", value: format(telemetry.y, unit: "Z"))
-                        MetricRow(title: "\u{0414}\u{0440}\u{043E}\u{0441}\u{0441}\u{0435}\u{043B}\u{044C}:", value: format(telemetry.throttleValve, unit: "\u{0412}"))
-                        MetricRow(title: "\u{0422}\u{0435}\u{043C}\u{043F}\u{0435}\u{0440}\u{0430}\u{0442}\u{0443}\u{0440}\u{0430} \u{0432}\u{043F}\u{0443}\u{0441}\u{043A}\u{0430}:", value: format(telemetry.inletTemperature, unit: "C"))
-                        MetricRow(title: "\u{0422}\u{0435}\u{043C}\u{043F}\u{0435}\u{0440}\u{0430}\u{0442}\u{0443}\u{0440}\u{0430} \u{0434}\u{0432}\u{0438}\u{0433}\u{0430}\u{0442}\u{0435}\u{043B}\u{044F}:", value: format(telemetry.engineTemperature, unit: "C"))
+                        MetricRow(title: L10n.throttle(language), value: format(telemetry.throttleValve, unit: voltageUnit))
+                        MetricRow(title: L10n.inletTemperature(language), value: format(telemetry.inletTemperature, unit: "C"))
+                        MetricRow(title: L10n.engineTemperature(language), value: format(telemetry.engineTemperature, unit: "C"))
                     }
                     .padding(.horizontal, 16)
 
                     VStack(spacing: 14) {
-                        Text("\u{0421}\u{043E}\u{0441}\u{0442}\u{043E}\u{044F}\u{043D}\u{0438}\u{0435} \u{0441}\u{0438}\u{0441}\u{0442}\u{0435}\u{043C}\u{044B}")
+                        Text(L10n.runningState(language))
                             .font(.system(size: 22, weight: .bold))
                         FaultGridView(
                             faults: telemetry.faultBits,
-                            hasTelemetry: viewModel.hasReceivedECUTelemetry
+                            hasTelemetry: viewModel.hasReceivedECUTelemetry,
+                            language: language
                         )
                     }
                     .padding(.horizontal, 16)
@@ -67,6 +70,17 @@ struct TelemetryView: View {
                         Image(systemName: "link")
                     }
                     .accessibilityLabel("Open device list")
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        appLanguageRaw = language.toggled.rawValue
+                    } label: {
+                        Text(language.shortTitle)
+                            .font(.caption.bold())
+                            .monospaced()
+                    }
+                    .accessibilityLabel("Switch language")
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -104,7 +118,7 @@ struct TelemetryView: View {
             if let device = bluetoothManager.connectedDevice {
                 HStack(spacing: 10) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Connected: \(device.name)")
+                        Text("\(L10n.connected(language)): \(device.name)")
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.7))
                         Text(connectionStatus)
@@ -112,7 +126,7 @@ struct TelemetryView: View {
                             .foregroundStyle(statusColor)
                     }
                     Spacer()
-                    Button("\u{041E}\u{0442}\u{043A}\u{043B}.") {
+                    Button(L10n.disconnect(language)) {
                         viewModel.disconnect()
                     }
                     .font(.caption)
@@ -156,18 +170,18 @@ struct TelemetryView: View {
 
     private var connectionStatus: String {
         guard bluetoothManager.connectedDevice != nil else {
-            return "\u{041D}\u{0435} \u{043F}\u{043E}\u{0434}\u{043A}\u{043B}\u{044E}\u{0447}\u{0435}\u{043D}\u{043E}"
+            return L10n.notConnected(language)
         }
         if viewModel.hasReceivedECUTelemetry {
-            return "\u{041F}\u{043E}\u{043B}\u{0443}\u{0447}\u{0435}\u{043D}\u{044B} \u{0434}\u{0430}\u{043D}\u{043D}\u{044B}\u{0435} Surfie ECU"
+            return L10n.ecuDataReceived(language)
         }
         if bluetoothManager.notificationCount > 0 {
-            return "\u{041F}\u{043E}\u{0434}\u{043A}\u{043B}\u{044E}\u{0447}\u{0435}\u{043D}\u{043E}, \u{043D}\u{043E} \u{043F}\u{0430}\u{043A}\u{0435}\u{0442}\u{044B} \u{043D}\u{0435} \u{043F}\u{043E}\u{0445}\u{043E}\u{0436}\u{0438} \u{043D}\u{0430} Surfie ECU"
+            return L10n.nonECUPackets(language)
         }
         if !bluetoothManager.notifyCharacteristicUUIDs.isEmpty {
-            return "\u{041F}\u{043E}\u{0434}\u{043A}\u{043B}\u{044E}\u{0447}\u{0435}\u{043D}\u{043E}. \u{041E}\u{0436}\u{0438}\u{0434}\u{0430}\u{043D}\u{0438}\u{0435} \u{0434}\u{0430}\u{043D}\u{043D}\u{044B}\u{0445} ECU"
+            return L10n.waitingForECU(language)
         }
-        return "\u{041F}\u{043E}\u{0434}\u{043A}\u{043B}\u{044E}\u{0447}\u{0435}\u{043D}\u{043E}. Notify-\u{0445}\u{0430}\u{0440}\u{0430}\u{043A}\u{0442}\u{0435}\u{0440}\u{0438}\u{0441}\u{0442}\u{0438}\u{043A}\u{0430} \u{043F}\u{043E}\u{043A}\u{0430} \u{043D}\u{0435} \u{043D}\u{0430}\u{0439}\u{0434}\u{0435}\u{043D}\u{0430}"
+        return L10n.notifyNotFound(language)
     }
 
     private var statusColor: Color {
@@ -182,6 +196,20 @@ struct TelemetryView: View {
 
     private func format(_ value: Double, unit: String) -> String {
         String(format: "%.1f %@", value, unit)
+    }
+
+    private var fuelVolumeUnit: String {
+        switch language {
+        case .english: "ml"
+        case .russian: "\u{043C}\u{043B}"
+        }
+    }
+
+    private var voltageUnit: String {
+        switch language {
+        case .english: "V"
+        case .russian: "\u{0412}"
+        }
     }
 
     private var rpmDebugText: String? {
