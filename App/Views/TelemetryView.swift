@@ -9,16 +9,18 @@ struct TelemetryView: View {
 
     private var telemetry: ECUTelemetry { viewModel.telemetry }
     private var language: AppLanguage { AppLanguage.from(appLanguageRaw) }
+    private let metricColumns = [
+        GridItem(.flexible(), spacing: 18),
+        GridItem(.flexible(), spacing: 18)
+    ]
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
-                    Text(telemetry.runtime)
-                        .font(.system(size: 32, weight: .regular, design: .monospaced))
-                        .padding(.top, 22)
+                VStack(spacing: 22) {
+                    headerTimer
 
-                    HStack(alignment: .center, spacing: 16) {
+                    HStack(alignment: .center, spacing: 10) {
                         GaugeView(
                             value: Double(telemetry.speed),
                             maximum: 100,
@@ -32,20 +34,19 @@ struct TelemetryView: View {
                             unit: "Rpm"
                         )
                     }
+                    .padding(.horizontal, 8)
 
-                    VStack(spacing: 3) {
-                        MetricRow(title: L10n.oilPer100KM(language), value: format(telemetry.oilConsumptionPer100KM, unit: fuelVolumeUnit))
-                        MetricRow(title: L10n.oilPerHour(language), value: format(telemetry.oilConsumptionPerHour, unit: fuelVolumeUnit))
-                        MetricRow(title: "Y:", value: format(telemetry.y, unit: "Z"))
-                        MetricRow(title: L10n.throttle(language), value: format(telemetry.throttleValve, unit: voltageUnit))
-                        MetricRow(title: L10n.inletTemperature(language), value: format(telemetry.inletTemperature, unit: "C"))
-                        MetricRow(title: L10n.engineTemperature(language), value: format(telemetry.engineTemperature, unit: "C"))
-                    }
-                    .padding(.horizontal, 16)
+                    metricPanel
 
                     VStack(spacing: 14) {
                         Text(L10n.runningState(language))
                             .font(.system(size: 22, weight: .bold))
+                            .overlay(alignment: .bottom) {
+                                Capsule()
+                                    .fill(Color.green)
+                                    .frame(width: 44, height: 2)
+                                    .offset(y: 8)
+                            }
                         FaultGridView(
                             faults: telemetry.faultBits,
                             hasTelemetry: viewModel.hasReceivedECUTelemetry,
@@ -58,7 +59,9 @@ struct TelemetryView: View {
                 }
                 .padding(.bottom, 28)
             }
-            .background(Color(red: 0.05, green: 0.055, blue: 0.06))
+            .background {
+                dashboardBackground
+            }
             .foregroundStyle(.white)
             .navigationTitle(AppConstants.navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
@@ -111,6 +114,69 @@ struct TelemetryView: View {
                 Text(viewModel.errorMessage ?? "")
             }
         }
+    }
+
+    private var headerTimer: some View {
+        VStack(spacing: 8) {
+            Text(telemetry.runtime)
+                .font(.system(size: 32, weight: .regular, design: .monospaced))
+                .contentTransition(.numericText())
+
+            HStack(spacing: 18) {
+                NeonLine()
+                Circle()
+                    .fill(Color.green.opacity(viewModel.hasReceivedECUTelemetry ? 1 : 0.35))
+                    .frame(width: 6, height: 6)
+                    .shadow(color: .green.opacity(0.65), radius: 5)
+                NeonLine()
+            }
+        }
+        .padding(.top, 18)
+    }
+
+    private var metricPanel: some View {
+        LazyVGrid(columns: metricColumns, spacing: 0) {
+            MetricRow(
+                title: L10n.oilPer100KM(language),
+                value: format(telemetry.oilConsumptionPer100KM, unit: fuelVolumeUnit),
+                iconName: "drop",
+                iconColor: .green
+            )
+            MetricRow(
+                title: L10n.inletTemperature(language),
+                value: format(telemetry.inletTemperature, unit: "C"),
+                iconName: "thermometer.medium",
+                iconColor: .red
+            )
+            MetricRow(
+                title: L10n.oilPerHour(language),
+                value: format(telemetry.oilConsumptionPerHour, unit: fuelVolumeUnit),
+                iconName: "fuelpump",
+                iconColor: .green
+            )
+            MetricRow(
+                title: L10n.engineTemperature(language),
+                value: format(telemetry.engineTemperature, unit: "C"),
+                iconName: "thermometer.high",
+                iconColor: .orange
+            )
+            MetricRow(
+                title: "Y:",
+                value: format(telemetry.y, unit: "Z"),
+                iconName: "bolt",
+                iconColor: .green
+            )
+            MetricRow(
+                title: L10n.throttle(language),
+                value: format(telemetry.throttleValve, unit: voltageUnit),
+                iconName: "slider.horizontal.3",
+                iconColor: .blue
+            )
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .dashboardPanel()
+        .padding(.horizontal, 16)
     }
 
     private var connectionDetails: some View {
@@ -166,6 +232,29 @@ struct TelemetryView: View {
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var dashboardBackground: some View {
+        LinearGradient(
+            colors: [
+                Color(red: 0.01, green: 0.03, blue: 0.06),
+                Color(red: 0.02, green: 0.055, blue: 0.09),
+                Color(red: 0.04, green: 0.045, blue: 0.06)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .overlay {
+            RadialGradient(
+                colors: [
+                    Color.blue.opacity(0.20),
+                    Color.clear
+                ],
+                center: .top,
+                startRadius: 10,
+                endRadius: 420
+            )
+        }
     }
 
     private var connectionStatus: String {
