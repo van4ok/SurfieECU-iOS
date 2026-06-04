@@ -1,8 +1,10 @@
 import SwiftUI
+import UIKit
 
 struct ECUDiagnosticsView: View {
     @EnvironmentObject private var bluetoothManager: BLEManager
     @State private var errorMessage: String?
+    @State private var copiedLog = false
 
     var body: some View {
         List {
@@ -32,6 +34,27 @@ struct ECUDiagnosticsView: View {
                     Label("Export BLE log", systemImage: "square.and.arrow.up")
                 }
                 .disabled(bluetoothManager.diagnosticRecords.isEmpty)
+
+                NavigationLink {
+                    BLELogTextView(logText: exportText)
+                } label: {
+                    Label("Open log text", systemImage: "doc.text")
+                }
+                .disabled(bluetoothManager.diagnosticRecords.isEmpty)
+
+                Button {
+                    UIPasteboard.general.string = exportText
+                    copiedLog = true
+                } label: {
+                    Label(copiedLog ? "Copied" : "Copy BLE log", systemImage: "doc.on.doc")
+                }
+                .disabled(bluetoothManager.diagnosticRecords.isEmpty)
+
+                if bluetoothManager.diagnosticRecords.isEmpty {
+                    Text("No records yet. Connect to ECU, wait for telemetry, or tap Read characteristics.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section("Raw BLE records") {
@@ -73,6 +96,9 @@ struct ECUDiagnosticsView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+        .onChange(of: bluetoothManager.diagnosticRecords.count) { _, _ in
+            copiedLog = false
+        }
     }
 
     private var exportText: String {
@@ -99,5 +125,29 @@ struct ECUDiagnosticsView: View {
         }
 
         return lines.joined(separator: "\n")
+    }
+}
+
+private struct BLELogTextView: View {
+    let logText: String
+    @State private var copied = false
+
+    var body: some View {
+        ScrollView {
+            Text(logText)
+                .font(.system(.caption, design: .monospaced))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+                .padding()
+        }
+        .navigationTitle("BLE Log")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(copied ? "Copied" : "Copy") {
+                    UIPasteboard.general.string = logText
+                    copied = true
+                }
+            }
+        }
     }
 }
