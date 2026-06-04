@@ -6,8 +6,8 @@ struct FaultGridView: View {
     let language: AppLanguage
 
     private let columns = [
-        GridItem(.flexible(), spacing: 16),
-        GridItem(.flexible(), spacing: 16)
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
     ]
 
     var body: some View {
@@ -20,25 +20,28 @@ struct FaultGridView: View {
     private func faultCard(indices: [Int]) -> some View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: 0) {
             ForEach(indices, id: \.self) { index in
-                HStack(spacing: 9) {
+                HStack(spacing: 7) {
                     Image(systemName: leadingIconName(at: index))
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(leadingIconColor(at: index))
-                        .frame(width: 22)
+                        .frame(width: 20)
 
                     Text(L10n.faults(language)[index])
-                        .font(.system(size: 14))
+                        .font(.system(size: 13))
                         .lineLimit(2)
-                        .minimumScaleFactor(0.72)
+                        .minimumScaleFactor(0.58)
+                        .fixedSize(horizontal: false, vertical: true)
                         .foregroundStyle(.white.opacity(0.88))
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Spacer(minLength: 4)
+                    Spacer(minLength: 2)
 
                     Image(systemName: stateIconName(at: index))
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(stateIconColor(at: index))
+                        .frame(width: 18)
                 }
-                .frame(minHeight: 40)
+                .frame(minHeight: 38)
                 .overlay(alignment: .bottom) {
                     Rectangle()
                         .fill(.white.opacity(0.07))
@@ -46,7 +49,7 @@ struct FaultGridView: View {
                 }
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .dashboardPanel()
     }

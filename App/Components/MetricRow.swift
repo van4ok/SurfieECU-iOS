@@ -7,28 +7,31 @@ struct MetricRow: View {
     var iconColor: Color = .green
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Image(systemName: iconName)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(iconColor)
-                .frame(width: 24)
+                .frame(width: 22)
                 .shadow(color: iconColor.opacity(0.35), radius: 5, x: 0, y: 0)
 
             Text(title)
                 .foregroundStyle(.white.opacity(0.86))
                 .lineLimit(2)
-                .minimumScaleFactor(0.78)
+                .minimumScaleFactor(0.62)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer(minLength: 8)
+            Spacer(minLength: 4)
 
             Text(value)
                 .fontWeight(.semibold)
                 .monospacedDigit()
                 .foregroundStyle(.white)
                 .lineLimit(1)
-                .minimumScaleFactor(0.78)
+                .minimumScaleFactor(0.62)
+                .frame(minWidth: 62, alignment: .trailing)
         }
-        .font(.system(size: 15))
-        .padding(.vertical, 8)
+        .font(.system(size: 14))
+        .padding(.vertical, 7)
     }
 }

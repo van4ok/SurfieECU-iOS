@@ -10,8 +10,8 @@ struct TelemetryView: View {
     private var telemetry: ECUTelemetry { viewModel.telemetry }
     private var language: AppLanguage { AppLanguage.from(appLanguageRaw) }
     private let metricColumns = [
-        GridItem(.flexible(), spacing: 18),
-        GridItem(.flexible(), spacing: 18)
+        GridItem(.flexible(), spacing: 10),
+        GridItem(.flexible(), spacing: 10)
     ]
 
     var body: some View {
@@ -173,10 +173,10 @@ struct TelemetryView: View {
                 iconColor: .blue
             )
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .dashboardPanel()
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 12)
     }
 
     private var connectionDetails: some View {
@@ -230,7 +230,7 @@ struct TelemetryView: View {
                     .lineLimit(2)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
