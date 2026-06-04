@@ -6,18 +6,19 @@ struct TelemetryView: View {
     @AppStorage("appLanguage") private var appLanguageRaw = AppLanguage.russian.rawValue
     @State private var showingDevices = false
     @State private var showingAbout = false
+    @State private var showingDiagnostics = false
 
     private var telemetry: ECUTelemetry { viewModel.telemetry }
     private var language: AppLanguage { AppLanguage.from(appLanguageRaw) }
     private let metricColumns = [
-        GridItem(.flexible(), spacing: 18),
-        GridItem(.flexible(), spacing: 18)
+        GridItem(.flexible(), spacing: 10),
+        GridItem(.flexible(), spacing: 10)
     ]
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 22) {
+                VStack(spacing: 14) {
                     headerTimer
 
                     HStack(alignment: .center, spacing: 10) {
@@ -35,6 +36,9 @@ struct TelemetryView: View {
                         )
                     }
                     .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .dashboardPanel()
+                    .padding(.horizontal, 16)
 
                     metricPanel
 
@@ -55,9 +59,9 @@ struct TelemetryView: View {
                     }
                     .padding(.horizontal, 16)
 
-                    connectionDetails
+                    bottomBar
                 }
-                .padding(.bottom, 28)
+                .padding(.bottom, 14)
             }
             .background {
                 dashboardBackground
@@ -70,7 +74,16 @@ struct TelemetryView: View {
                     Button {
                         showingDevices = true
                     } label: {
-                        Image(systemName: "link")
+                        HStack(spacing: 8) {
+                            Image(systemName: "link")
+                            Circle()
+                                .fill(statusColor)
+                                .frame(width: 6, height: 6)
+                            Text(toolbarConnectionText)
+                                .font(.caption)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.72)
+                        }
                     }
                     .accessibilityLabel("Open device list")
                 }
@@ -105,6 +118,11 @@ struct TelemetryView: View {
             .sheet(isPresented: $showingAbout) {
                 AboutView()
             }
+            .sheet(isPresented: $showingDiagnostics) {
+                NavigationStack {
+                    ECUDiagnosticsView()
+                }
+            }
             .alert("Error", isPresented: Binding(
                 get: { viewModel.errorMessage != nil },
                 set: { if !$0 { viewModel.errorMessage = nil } }
@@ -135,103 +153,51 @@ struct TelemetryView: View {
     }
 
     private var metricPanel: some View {
-        LazyVGrid(columns: metricColumns, spacing: 0) {
-            MetricRow(
+        LazyVGrid(columns: metricColumns, spacing: 10) {
+            MetricCard(
                 title: L10n.oilPer100KM(language),
-                value: format(telemetry.oilConsumptionPer100KM, unit: fuelVolumeUnit),
+                value: number(telemetry.oilConsumptionPer100KM),
+                unit: fuelVolumeUnit,
                 iconName: "drop",
                 iconColor: .green
             )
-            MetricRow(
-                title: L10n.inletTemperature(language),
-                value: format(telemetry.inletTemperature, unit: "C"),
-                iconName: "thermometer.medium",
-                iconColor: .red
-            )
-            MetricRow(
+            MetricCard(
                 title: L10n.oilPerHour(language),
-                value: format(telemetry.oilConsumptionPerHour, unit: fuelVolumeUnit),
+                value: number(telemetry.oilConsumptionPerHour),
+                unit: fuelVolumeUnit,
                 iconName: "fuelpump",
                 iconColor: .green
             )
-            MetricRow(
-                title: L10n.engineTemperature(language),
-                value: format(telemetry.engineTemperature, unit: "C"),
-                iconName: "thermometer.high",
-                iconColor: .orange
+            MetricCard(
+                title: L10n.inletTemperature(language),
+                value: number(telemetry.inletTemperature),
+                unit: "\u{00B0}C",
+                iconName: "thermometer.medium",
+                iconColor: .red
             )
-            MetricRow(
+            MetricCard(
+                title: L10n.engineTemperature(language),
+                value: number(telemetry.engineTemperature),
+                unit: "\u{00B0}C",
+                iconName: "engine.combustion",
+                iconColor: .green
+            )
+            MetricCard(
                 title: "Y:",
-                value: format(telemetry.y, unit: "Z"),
+                value: number(telemetry.y),
+                unit: "Z",
                 iconName: "bolt",
                 iconColor: .green
             )
-            MetricRow(
+            MetricCard(
                 title: L10n.throttle(language),
-                value: format(telemetry.throttleValve, unit: voltageUnit),
+                value: number(telemetry.throttleValve),
+                unit: voltageUnit,
                 iconName: "slider.horizontal.3",
                 iconColor: .blue
             )
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .dashboardPanel()
         .padding(.horizontal, 16)
-    }
-
-    private var connectionDetails: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let device = bluetoothManager.connectedDevice {
-                HStack(spacing: 10) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("\(L10n.connected(language)): \(device.name)")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.7))
-                        Text(connectionStatus)
-                            .font(.caption)
-                            .foregroundStyle(statusColor)
-                    }
-                    Spacer()
-                    Button(L10n.disconnect(language)) {
-                        viewModel.disconnect()
-                    }
-                    .font(.caption)
-                    .buttonStyle(.bordered)
-                    .tint(.red)
-                }
-            }
-
-            if !bluetoothManager.activeServiceUUIDs.isEmpty {
-                Text("Services: \(bluetoothManager.activeServiceUUIDs.map(\.uuidString).joined(separator: ", "))")
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.55))
-                    .lineLimit(3)
-            }
-
-            if !bluetoothManager.notifyCharacteristicUUIDs.isEmpty {
-                Text("Notify: \(bluetoothManager.notifyCharacteristicUUIDs.map(\.uuidString).joined(separator: ", "))")
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.55))
-                    .lineLimit(3)
-            }
-
-            if bluetoothManager.notificationCount > 0 {
-                Text("Notifications: \(bluetoothManager.notificationCount)")
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.55))
-                if let rpmDebugText {
-                    Text(rpmDebugText)
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.55))
-                }
-                Text("Last hex: \(shortHex(bluetoothManager.lastNotificationHex))")
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.45))
-                    .lineLimit(2)
-            }
-        }
-        .padding(.horizontal, 16)
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var dashboardBackground: some View {
@@ -257,20 +223,51 @@ struct TelemetryView: View {
         }
     }
 
-    private var connectionStatus: String {
-        guard bluetoothManager.connectedDevice != nil else {
-            return L10n.notConnected(language)
+    private var bottomBar: some View {
+        HStack(spacing: 0) {
+            bottomBarButton(icon: "waveform.path.ecg", title: dashboardTitle, isActive: true) {}
+            bottomBarButton(icon: "chart.bar", title: dataTitle, isActive: false) {
+                showingDiagnostics = true
+            }
+            bottomBarButton(icon: "gauge.with.dots.needle.50percent", title: diagnosticsTitle, isActive: false) {
+                showingDiagnostics = true
+            }
+            bottomBarButton(icon: "exclamationmark.triangle", title: faultsTitle, isActive: false) {}
+            bottomBarButton(icon: "ellipsis", title: moreTitle, isActive: false) {
+                showingAbout = true
+            }
         }
-        if viewModel.hasReceivedECUTelemetry {
-            return L10n.ecuDataReceived(language)
+        .padding(6)
+        .dashboardPanel(cornerRadius: 18)
+        .padding(.horizontal, 16)
+    }
+
+    private func bottomBarButton(icon: String, title: String, isActive: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 19, weight: .semibold))
+                Text(title)
+                    .font(.system(size: 10, weight: .medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.68)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .foregroundStyle(isActive ? Color.green : .white.opacity(0.58))
+            .background {
+                if isActive {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.green.opacity(0.16))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(Color.green.opacity(0.55), lineWidth: 1)
+                        }
+                        .shadow(color: .green.opacity(0.25), radius: 8, x: 0, y: 0)
+                }
+            }
         }
-        if bluetoothManager.notificationCount > 0 {
-            return L10n.nonECUPackets(language)
-        }
-        if !bluetoothManager.notifyCharacteristicUUIDs.isEmpty {
-            return L10n.waitingForECU(language)
-        }
-        return L10n.notifyNotFound(language)
+        .buttonStyle(.plain)
     }
 
     private var statusColor: Color {
@@ -283,8 +280,8 @@ struct TelemetryView: View {
         return .yellow
     }
 
-    private func format(_ value: Double, unit: String) -> String {
-        String(format: "%.1f %@", value, unit)
+    private func number(_ value: Double) -> String {
+        String(format: "%.1f", value)
     }
 
     private var fuelVolumeUnit: String {
@@ -301,33 +298,30 @@ struct TelemetryView: View {
         }
     }
 
-    private var rpmDebugText: String? {
-        let bytes = bytesFromHex(bluetoothManager.lastNotificationHex)
-        guard bytes.count > 7 else {
-            return nil
+    private var toolbarConnectionText: String {
+        if bluetoothManager.connectedDevice == nil {
+            return language == .english ? "Offline" : "\u{041D}\u{0435}\u{0442}"
         }
-        let rpm = Int(bytes[6]) * 256 + Int(bytes[7])
-        return String(format: "RPM bytes: %02X %02X -> %d rpm", bytes[6], bytes[7], rpm)
+        return language == .english ? "Connected" : "\u{041F}\u{043E}\u{0434}\u{043A}\u{043B}."
     }
 
-    private func shortHex(_ hex: String) -> String {
-        guard hex.count > 64 else {
-            return hex
-        }
-        let prefix = hex.prefix(64)
-        return "\(prefix)..."
+    private var dashboardTitle: String {
+        language == .english ? "Dash" : "\u{041F}\u{0440}\u{0438}\u{0431}."
     }
 
-    private func bytesFromHex(_ hex: String) -> [UInt8] {
-        var result: [UInt8] = []
-        var index = hex.startIndex
-        while index < hex.endIndex {
-            let next = hex.index(index, offsetBy: 2, limitedBy: hex.endIndex) ?? hex.endIndex
-            if let byte = UInt8(hex[index..<next], radix: 16) {
-                result.append(byte)
-            }
-            index = next
-        }
-        return result
+    private var dataTitle: String {
+        language == .english ? "Data" : "\u{0414}\u{0430}\u{043D}\u{043D}."
+    }
+
+    private var diagnosticsTitle: String {
+        language == .english ? "Diag" : "\u{0414}\u{0438}\u{0430}\u{0433}."
+    }
+
+    private var faultsTitle: String {
+        language == .english ? "Faults" : "\u{041E}\u{0448}\u{0438}\u{0431}."
+    }
+
+    private var moreTitle: String {
+        language == .english ? "More" : "\u{0415}\u{0449}\u{0435}"
     }
 }
