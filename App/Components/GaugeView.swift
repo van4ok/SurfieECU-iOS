@@ -87,34 +87,24 @@ struct GaugeView: View {
                     .fill(.white.opacity(0.88))
                     .frame(width: size * 0.045, height: size * 0.045)
 
-                VStack(spacing: 5) {
-                    Text(maximum > 1_000 ? "RPM" : "SPEED")
-                        .font(.system(size: size * 0.075, weight: .medium))
-                        .tracking(1.4)
-                        .foregroundStyle(.white.opacity(0.42))
-                        .offset(y: size * 0.05)
+                VStack(spacing: 4) {
+                    Text(unit)
+                        .font(.system(size: size * 0.105, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.86))
+                        .offset(y: -size * 0.06)
 
                     Text(title)
-                        .font(.system(size: size * 0.28, weight: .semibold, design: .rounded))
+                        .font(.system(size: size * 0.13, weight: .semibold))
                         .monospacedDigit()
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color(red: 0.13, green: 0.84, blue: 0.38))
                         .contentTransition(.numericText())
                         .animation(.easeOut(duration: 0.25), value: title)
-                        .minimumScaleFactor(0.48)
-                        .offset(y: size * 0.10)
-
-                    Text(unit.lowercased())
-                        .font(.system(size: size * 0.095, weight: .medium))
-                        .foregroundStyle(Color(red: 0.13, green: 0.96, blue: 0.38))
-                        .offset(y: size * 0.07)
+                        .offset(y: size * 0.20)
                 }
-
-                footerPill(size: size)
-                    .offset(y: size * 0.32)
             }
         }
         .aspectRatio(1, contentMode: .fit)
-        .frame(minWidth: 142, maxWidth: 178)
+        .frame(minWidth: 150, maxWidth: 190)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title) \(unit)")
     }
@@ -168,27 +158,6 @@ struct GaugeView: View {
         path.addLine(to: right)
         path.closeSubpath()
         return path
-    }
-
-    private func footerPill(size: Double) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: maximum > 1_000 ? "engine.combustion" : "gauge.with.dots.needle.50percent")
-                .font(.system(size: size * 0.07, weight: .semibold))
-            Text(maximum > 1_000 ? "0-\(Int(maximum))" : "0-\(Int(maximum))")
-                .font(.system(size: size * 0.06, weight: .medium))
-                .monospacedDigit()
-        }
-        .foregroundStyle(Color.green)
-        .padding(.horizontal, size * 0.08)
-        .padding(.vertical, size * 0.035)
-        .background {
-            Capsule()
-                .fill(Color.black.opacity(0.38))
-                .overlay {
-                    Capsule()
-                        .stroke(.white.opacity(0.14), lineWidth: 1)
-                }
-        }
     }
 }
 
