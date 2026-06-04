@@ -12,6 +12,11 @@ struct GaugeView: View {
     private var warningStart: Int { isRPM ? 32 : 25 }
     private var dangerStart: Int { isRPM ? 40 : 31 }
     private var marks: [Int] { isRPM ? [0, 2_400, 4_800, 7_200, 9_600, 12_000] : [0, 20, 40, 60, 80, 100] }
+    private var valueFontSize: CGFloat { isRPM ? 74 : 66 }
+    private var unitFontSize: CGFloat { isRPM ? 20 : 18 }
+    private var barHeight: CGFloat { isRPM ? 42 : 34 }
+    private var verticalPadding: CGFloat { isRPM ? 22 : 18 }
+    private var contentSpacing: CGFloat { isRPM ? 18 : 12 }
 
     private var progress: Double {
         guard maximum > 0 else { return 0 }
@@ -23,7 +28,7 @@ struct GaugeView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: isRPM ? 18 : 12) {
+        VStack(alignment: .leading, spacing: contentSpacing) {
             header
             valueReadout
             SegmentedLevelBar(
@@ -32,11 +37,11 @@ struct GaugeView: View {
                 warningStart: warningStart,
                 dangerStart: dangerStart
             )
-            .frame(height: isRPM ? 42 : 34)
+            .frame(height: barHeight)
             scaleMarks
         }
         .padding(.horizontal, 22)
-        .padding(.vertical, isRPM ? 22 : 18)
+        .padding(.vertical, verticalPadding)
         .dashboardPanel(cornerRadius: 14)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title) \(unit)")
@@ -68,17 +73,14 @@ struct GaugeView: View {
         HStack(alignment: .lastTextBaseline, spacing: 12) {
             Spacer(minLength: 0)
             Text(title)
-                .font(.system(size: isRPM ? 74 : 66, weight: .heavy, design: .rounded))
-                .italic()
+                .font(.system(size: valueFontSize, weight: .heavy, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.55)
-                .contentTransition(.numericText())
                 .animation(.easeOut(duration: 0.25), value: title)
             Text(unit.lowercased())
-                .font(.system(size: isRPM ? 20 : 18, weight: .medium, design: .rounded))
-                .italic()
+                .font(.system(size: unitFontSize, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.78))
             Spacer(minLength: 0)
         }
