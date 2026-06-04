@@ -20,21 +20,21 @@ struct TelemetryView: View {
                 VStack(spacing: 22) {
                     headerTimer
 
-                    HStack(alignment: .center, spacing: 10) {
+                    VStack(spacing: 12) {
+                        GaugeView(
+                            value: Double(telemetry.rpm),
+                            maximum: 12_000,
+                            title: "\(telemetry.rpm)",
+                            unit: "rpm"
+                        )
                         GaugeView(
                             value: Double(telemetry.speed),
                             maximum: 100,
                             title: "\(telemetry.speed)",
                             unit: "km/h"
                         )
-                        GaugeView(
-                            value: Double(telemetry.rpm),
-                            maximum: 12_000,
-                            title: "\(telemetry.rpm)",
-                            unit: "Rpm"
-                        )
                     }
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, 16)
 
                     metricPanel
 
